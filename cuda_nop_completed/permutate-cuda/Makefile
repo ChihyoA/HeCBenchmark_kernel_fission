@@ -1,0 +1,72 @@
+include ../../common/make.config
+#===============================================================================
+# User Options
+#===============================================================================
+
+# Compiler can be set below, or via environment variable
+OPTIMIZE  = yes
+DEBUG     = no
+ARCH      = sm_60
+
+#===============================================================================
+# Program name & source code list
+#===============================================================================
+
+program = main
+
+source = main.cpp permutation_testing.cpp utils.cpp statistical_test.cpp \
+         bzip/blocksort.cpp \
+         bzip/bzlib.cpp \
+         bzip/compress.cpp \
+         bzip/crctable.cpp \
+         bzip/decompress.cpp \
+         bzip/huffman.cpp \
+         bzip/randtable.cpp
+
+kernels = gpu_permutation_testing.cu
+
+obj = $(source:.cpp=.o) $(kernels:.cu=.o) 
+
+#===============================================================================
+# Sets Flags
+#===============================================================================
+
+# Standard Flags
+HEC_NVCC_FLAGS := -std=c++14
+
+# Linker Flags
+LINKER_FLAGS += 
+
+# Debug Flags
+ifeq ($(DEBUG),yes)
+  HEC_NVCC_FLAGS += -g -DDEBUG
+  LINKER_FLAGS  += -g
+endif
+
+# Optimization Flags
+ifeq ($(OPTIMIZE),yes)
+  HEC_NVCC_FLAGS += 
+endif
+#===============================================================================
+# Targets to Build
+#===============================================================================
+
+$(program): $(obj) Makefile
+	$(LINKER) $(obj) -o $@ $(LINKER_FLAGS)
+
+%.o: %.cu kernel_functions.cuh device_functions.cuh header.h Makefile
+	$(NVCC) $(HEC_NVCC_FLAGS) -c $< -o $@
+
+%.o: %.cpp Makefile header.h
+	$(CXX) $(HEC_NVCC_FLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(program) $(obj)
+
+run: $(program)
+	./$(program) test_data/truerand_1bit.bin
+run_no_build:
+	./$(program) test_data/truerand_1bit.bin
+
+run_nsys:
+	nsys profile --gpu-metrics-device=all --gpu-metrics-frequency=1000 --cuda-graph-trace=node 	./$(program) test_data/truerand_1bit.bin

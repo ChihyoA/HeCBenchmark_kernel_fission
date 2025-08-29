@@ -78,3 +78,6 @@ run_no_build:
 	./$(program) -num_systems=524288
 	./$(program) --lmem -num_systems=524288
 	./$(program) --vec4 -num_systems=524288 
+
+run_nsys:
+	nsys profile --gpu-metrics-device=all --gpu-metrics-frequency=1000 --cuda-graph-trace=node 	./$(program) --vec4 -num_systems=524288 

@@ -55,3 +55,6 @@ run: $(program)
 	./$(program) 32 10000000
 run_no_build:
 	./$(program) 32 10000000
+
+run_nsys:
+	nsys profile --gpu-metrics-device=all --gpu-metrics-frequency=1000 --cuda-graph-trace=node 	./$(program) 32 10000000

@@ -1,0 +1,37 @@
+include ../../common/make.config
+
+# C compiler
+#CC = gcc
+#CC_FLAGS = -g -fopenmp -O2 
+#
+## CUDA compiler
+#NVCC = $(CUDA_DIR)/bin/nvcc
+#NVCC_FLAGS = -I$(CUDA_DIR)/include 
+#
+## 'make dbg=1' enables NVCC debugging
+#ifeq ($(dbg),1)
+#	NVCC_FLAGS += -g -O0
+#else
+#	NVCC_FLAGS += -O2
+#endif
+#
+## 'make emu=1' compiles the CUDA kernels for emulation
+#ifeq ($(emu),1)
+#	NVCC_FLAGS += -deviceemu
+#endif
+
+
+kmeans: cluster.o getopt.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o
+	$(NVCC) cluster.o getopt.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o -o kmeans $(NVCC_FLAGS)
+
+%.o: %.[c]
+	$(CC) $(CC_FLAGS) $< -c -o $@
+
+kmeans_cuda.o: kmeans_cuda.cu
+	$(NVCC) $(NVCC_FLAGS) -c kmeans_cuda.cu
+
+clean:
+	rm -f *.o *~ kmeans kmeans_cuda.linkinfo
+
+run_nsys:
+	nsys profile --gpu-metrics-device=all --gpu-metrics-frequency=1000 --cuda-graph-trace=node ./kmeans -o -i ../../data/kmeans/kdd_cup 
